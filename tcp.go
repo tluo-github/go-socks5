@@ -48,9 +48,9 @@ func tcpLocal(addr string, server string, cipher string,password string){
 			}
 			defer rc.Close()
 			rc.(*net.TCPConn).SetKeepAlive(true)
-			sConn := NewConn(rc,*NewCipher(cipher,[]byte(password))) // socks5 local <--> socks 5 server 需要
+			sConn := NewConn(rc,*NewCipher(cipher,[]byte(password))) // socks5 local <--> socks 5 server 需要假面
 			// 直接发送 address
-			if _, err = rc.Write(target); err != nil {
+			if _, err = sConn.Write(target); err != nil {
 				logf("failed to send target address: %v", err)
 				return
 			}
@@ -88,15 +88,14 @@ func tcpServer(addr string,cipher string,password string)  {
 			defer conn.Close()
 			conn.(*net.TCPConn).SetKeepAlive(true)
 
+			cConn := NewConn(conn,*NewCipher(cipher,[]byte(password))) // socks5 server <--> socks5 local 需要加密
 
-			remote_addr, err := socks.ReadAddr(conn)
+
+			remote_addr, err := socks.ReadAddr(cConn)
 			if err != nil {
 				logf("failed to get target address: %v", err)
 				return
 			}
-
-			cConn := NewConn(conn,*&Cipher{}) // socks5 server <--> socks5 local 需要加密
-
 			// 连接 google
 			rc, err := net.Dial("tcp", remote_addr.String())
 			if err != nil {
@@ -106,7 +105,7 @@ func tcpServer(addr string,cipher string,password string)  {
 			defer rc.Close()
 			rc.(*net.TCPConn).SetKeepAlive(true)
 			logf("proxy %s <-> %s", conn.RemoteAddr(), remote_addr)
-			rConn := NewConn(rc, *NewCipher(cipher,[]byte(password))) // socks5 server <--> remote 不需要加密
+			rConn := NewConn(rc, *&Cipher{}) // socks5 server <--> remote 不需要加密
 
 			_, _, err = relay(cConn, rConn)
 			if err != nil {
