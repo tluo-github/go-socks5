@@ -131,14 +131,14 @@ func relay(left, right *Conn) (int64, int64, error) {
 
 	go func() {
 		n, err := io.Copy(right, left)
-		right.conn.SetDeadline(time.Now()) // wake up the other goroutine blocking on right
-		left.conn.SetDeadline(time.Now())  // wake up the other goroutine blocking on left
+		right.conn.SetDeadline(time.Now().Add(time.Duration(10) * time.Second)) // wake up the other goroutine blocking on right
+		left.conn.SetDeadline(time.Now().Add(time.Duration(10) * time.Second))  // wake up the other goroutine blocking on left
 		ch <- res{n, err}
 	}()
 
 	n, err := io.Copy(left, right)
-	right.conn.SetDeadline(time.Now()) // wake up the other goroutine blocking on right
-	left.conn.SetDeadline(time.Now())  // wake up the other goroutine blocking on left
+	right.conn.SetDeadline(time.Now().Add(time.Duration(10) * time.Second)) // wake up the other goroutine blocking on right
+	left.conn.SetDeadline(time.Now().Add(time.Duration(10) * time.Second))  // wake up the other goroutine blocking on left
 	rs := <-ch
 
 	if err == nil {
